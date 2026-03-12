@@ -41,7 +41,7 @@ api/
 
 1. Start the FastAPI server:
    ```bash
-   uvicorn api.main:app --reload
+   python -m uvicorn api.main:app --reload
    ```
 
 2. Open your browser and navigate to:
