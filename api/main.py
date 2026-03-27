@@ -1,34 +1,45 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Depends
+from .schemas import LogCreate
+from .auth import verify_api_key
 
-# Create FastAPI app
+# Application entry point for the logging API.
 app = FastAPI()
 
-# In-memory storage for logs, used to temporarily store logs for get and post requests
+# Accepted severity values for incoming log entries.
+LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+
+# Temporary in-memory store; entries are lost when the process restarts.
 logs : list[dict] = []
 
-#create a pydantic model for the log entry, which will be used to validate the incoming data for the POST request
-class LogCreate(BaseModel):
-    level: str
-    message: str
-
-# Define a health check endpoint to verify that the API is running
+# Lightweight liveness check used by clients or deployment tooling.
 @app.get("/health")
 def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
-# Define an endpoint to create a log entry, which accepts a POST request with a JSON payload that matches the LogCreate model. 
-# The log entry is stored in the in-memory logs list and a response is returned confirming that the log has been stored.
+# Validates the payload, assigns a sequential ID, and stores the entry.
 @app.post("/logs")
-def create_log(payload: LogCreate) -> dict:
-    item = payload.model_dump()
-    logs.append(item)
-    return {
+def create_log(payload: LogCreate, _: None = Depends(verify_api_key)) -> dict:
+    if payload.level not in LOG_LEVELS:
+        raise HTTPException(status_code=400, detail="Invalid log level")
+    item = payload.model_dump() 
+    item = {
+        "id" : len(logs) + 1,
         "message" : "log stored",
         "data" : item,
     }
+    logs.append(item)
 
-# Define an endpoint to retrieve all log entries, which accepts a GET request and returns the list of logs stored in memory.
+    return item
+
+# Returns all currently stored log entries.
 @app.get("/logs")
-def get_logs() -> list[dict]:
+def get_logs(_: None = Depends(verify_api_key)) -> list[dict]:
     return logs
+
+# Looks up a single log entry by its numeric ID.
+@app.get("/logs/{log_id}")
+def get_log(log_id: int, _: None = Depends(verify_api_key)) -> dict:
+    for log in logs:
+        if log["id"] == log_id:
+            return log
+    raise HTTPException(status_code=404, detail="Log not found")
