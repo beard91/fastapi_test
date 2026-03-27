@@ -22,11 +22,10 @@ def health_check() -> dict[str, str]:
 def create_log(payload: LogCreate, _: None = Depends(verify_api_key)) -> dict:
     if payload.level not in LOG_LEVELS:
         raise HTTPException(status_code=400, detail="Invalid log level")
-    item = payload.model_dump() 
     item = {
         "id" : len(logs) + 1,
-        "message" : "log stored",
-        "data" : item,
+        "level" : payload.level,
+        "message" : payload.message,
     }
     logs.append(item)
 
