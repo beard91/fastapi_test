@@ -43,7 +43,7 @@ pip install -r requirements.txt
 Start the server with Uvicorn:
 
 ```bash
-uvicorn api.main:app --reload
+python -m uvicorn api.main:app --reload
 ```
 
 Useful URLs once the server is running:
