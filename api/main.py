@@ -17,6 +17,7 @@ def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
 # Validates the payload, assigns a sequential ID, and stores the entry.
+# Protected by API key authentication.
 @app.post("/logs")
 def create_log(payload: LogCreate, _: None = Depends(verify_api_key)) -> dict:
     if payload.level not in LOG_LEVELS:
@@ -32,11 +33,13 @@ def create_log(payload: LogCreate, _: None = Depends(verify_api_key)) -> dict:
     return item
 
 # Returns all currently stored log entries.
+# Protected by API key authentication.
 @app.get("/logs")
 def get_logs(_: None = Depends(verify_api_key)) -> list[dict]:
     return logs
 
 # Looks up a single log entry by its numeric ID.
+# Protected by API key authentication.
 @app.get("/logs/{log_id}")
 def get_log(log_id: int, _: None = Depends(verify_api_key)) -> dict:
     for log in logs:
