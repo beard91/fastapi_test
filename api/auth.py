@@ -4,6 +4,8 @@ from fastapi import Header, HTTPException
 API_KEY = "mysecretkey"
 
 # FastAPI dependency that rejects requests with a missing or invalid key.
-def verify_api_key(x_api_key: str = Header(...)) -> None:
+def verify_api_key(x_api_key: str = Header(default=None)) -> None:
+    if x_api_key is None:
+        raise HTTPException(status_code=422, detail="Invalid Header")
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Invalid Key")
